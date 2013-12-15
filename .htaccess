@@ -1,4 +1,4 @@
 Options -Indexes
 
 RewriteEngine  On
-RewriteRule ^workout_location(/)?(\d*)$ endpoint/NP_WorkoutLocationHandler.php?id=$1 [L,QSA]
+RewriteRule ^workout_location(/)?(\d*)$ endpoint/NP_WorkoutLocationHandler.php?id=$2 [L,QSA]
