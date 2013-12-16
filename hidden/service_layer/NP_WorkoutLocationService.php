@@ -75,7 +75,7 @@
 			return $response;
 		}
 		
-		function createWorkoutLocation($tribe_id, $name, $latitude, $longitude)
+		function createWorkoutLocation($tribe_id, $name, $latitude, $longitude, $token)
 		{
 			try
 			{
@@ -94,5 +94,10 @@
 			}
 			catch (PDOException $e) { $this->handlePDOError($e); }
 		}
+
+		/*function updateWorkoutLocation($id, $params, $token)
+		{
+
+		}*/
 	}
 ?>

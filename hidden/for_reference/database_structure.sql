@@ -1,3 +1,22 @@
+CREATE TABLE user (
+	id SERIAL PRIMARY KEY,
+	email VARCHAR(255) NOT NULL UNIQUE,
+	facebook_token TEXT,
+	token VARCHAR(255) NOT NULL,
+	token_expiry TIMESTAMP NOT NULL,
+	isAdmin BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+INSERT INTO user(email, token, longitude) VALUES
+	('Boston', 42.358431, -71.059773),
+	('Denver', 39.737567, -104.984718),
+	('Edmonton, AB', 53.544389, -113.490927),
+	('San Diego', 32.715329, -117.157255),
+	('Madison', 43.073052, -89.401230),
+	('San Francisco', 37.774929, -122.419416),
+	('Washington D.C.', 38.907231, -77.036464);
+
+
 CREATE TABLE tribe (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(250) NOT NULL UNIQUE,
@@ -14,6 +33,12 @@ INSERT INTO tribe(name, latitude, longitude) VALUES
 	('San Francisco', 37.774929, -122.419416),
 	('Washington D.C.', 38.907231, -77.036464);
 	
+CREATE TABLE tribe_leader (
+	id SERIAL PRIMARY KEY,
+	facebook_token TEXT,
+	isAdmin BOOLEAN,
+);
+
 CREATE TABLE workout_location (
 	id SERIAL PRIMARY KEY,
 	tribe_id BIGINT UNSIGNED NOT NULL,
