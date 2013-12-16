@@ -2,6 +2,7 @@
 	require_once('../hidden/helper_classes/NP_Service.php');
 	require_once('../hidden/data_model/NP_WorkoutLocationModel.php');
 	require_once('../hidden/helper_classes/NP_exceptions.php');
+	require_once('../hidden/service_layer/NP_TribeService.php');
 	
 	class WorkoutLocationService extends NP_service{
     	
@@ -24,6 +25,30 @@
 				
 				$response[] = $jsonObject->getArray();
 			}
+			return $response;
+		}
+
+		function getWorkoutLocationByTribeId($tribe_id)
+		{
+			$response = array();
+			$stmt = $this->DBH->prepare('SELECT * FROM workout_location where tribe_id = :tribe_id');
+			$stmt->execute(array(':tribe_id' => $tribe_id));
+			
+			foreach($stmt->fetchAll() as $record) {
+				$jsonObject = new WorkoutLocationModel;
+				$jsonObject->id = $record['id'];
+				$jsonObject->tribe_id = $record['tribe_id'];
+				$jsonObject->name = $record['name'];
+				$jsonObject->lat = $record['latitude'];
+				$jsonObject->lng = $record['longitude'];
+				
+				$response[] = $jsonObject->getArray();
+			}
+
+			//If no records, confirm whether the tribe even exists
+			if (count($response) == 0)
+				(new TribeService($this->DBH))->getTribeById($tribe_id);
+			
 			return $response;
 		}
 		
