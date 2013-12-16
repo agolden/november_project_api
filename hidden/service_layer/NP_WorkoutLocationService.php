@@ -1,10 +1,17 @@
 <?php
-	require_once('../hidden/helper_classes/NP_service.php');
+	require_once('../hidden/helper_classes/NP_Service.php');
 	require_once('../hidden/data_model/NP_WorkoutLocationModel.php');
+	require_once('../hidden/helper_classes/NP_exceptions.php');
 	
 	class WorkoutLocationService extends NP_service{
     	
-    	function getAllLocations()
+		function __construct($dbh) {
+			$this->DBH = $dbh;
+			$this->uniqueErrorMessage = 'The workout location name must be unique.';
+			$this->invalidReferenceMessage = 'The tribe id you referenced was not found.';
+		}
+		
+    	function getAllWorkoutLocations()
 		{
 			$response = array();
 			foreach($this->DBH->query('SELECT * FROM workout_location') as $record) {
@@ -20,7 +27,7 @@
 			return $response;
 		}
 		
-		function getLocationById($id)
+		function getWorkoutLocationById($id)
 		{
 			$response = array();
 			$stmt = $this->DBH->prepare('SELECT * FROM workout_location where id = :id');
@@ -36,7 +43,31 @@
 				
 				$response[] = $jsonObject->getArray();
 			}
+			
+			if (count($response) != 1)
+				throw new RecordNotFoundException("The workout location you requested was not found.");
+			
 			return $response;
+		}
+		
+		function createWorkoutLocation($tribe_id, $name, $latitude, $longitude)
+		{
+			try
+			{
+				$response = array();
+				$stmt = $this->DBH->prepare('INSERT INTO workout_location(tribe_id, name, latitude, longitude) VALUES (:tribe_id, :name, :latitude, :longitude)');
+				$stmt->execute(array(':tribe_id' => $tribe_id, ':name' => $name, ':latitude' => $latitude, ':longitude' => $longitude));
+				
+				$jsonObject = new WorkoutLocationModel;
+				$jsonObject->id = $this->DBH->lastInsertId();
+				$jsonObject->tribe_id = $tribe_id;
+				$jsonObject->name = $name;
+				$jsonObject->latitude = $latitude;
+				$jsonObject->longitude = $longitude;
+				$response[] = $jsonObject->getArray();
+				return $response;
+			}
+			catch (PDOException $e) { $this->handlePDOError($e); }
 		}
 	}
 ?>

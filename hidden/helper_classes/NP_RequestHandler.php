@@ -1,5 +1,5 @@
 <?php
-	require_once('NP_JSONResponse.php');
+	require_once('NP_RequestResponse.php');
 	require_once('NP_exceptions.php');
 	require_once('NP_DatabaseConnection.php');
 	
@@ -16,9 +16,8 @@
 		function handleRequest()
 		{
 			header('Content-type: application/json');
-			$this->response = new NP_JSONResponse;
-			$db = parse_ini_file('../hidden/git_ignore/database.ini');
-		
+			$this->response = new NP_RequestResponse;
+			
 			try{
 				$this->DBH = (new DatabaseConnection)->getConn();
 				
@@ -36,15 +35,30 @@
 					default:
 						break;
 				}
-		
-				echo $this->response->getResponse();
-			} catch (BadRequestException $e){
-				header('Invalid or missing JSON', true, 400);
+
+			} catch (NPException $e) {
+				header('error', true, $e->getHTTPCode());
+				$this->response->errorCode = $e->getErrorCode();
+				$this->response->errorMessage = $e->getMessage();
+
 			} catch (Exception $e){
-				header('Server error.', true, 500);
+				header('error', true, 500);
+				$this->response->errorCode = 1999;
+				$this->response->errorMessage = "Server exception occurred.  Please try again later.";
 			}
+			
+			echo json_encode($this->response->getResponse());
+		}
 		
-			$this->DBH = null;
+		public static function getValidJSON()
+		{
+			$inputJSON = file_get_contents('php://input');
+			$input = json_decode( $inputJSON, TRUE );
+
+			if ($_SERVER['CONTENT_TYPE'] != "application/json" || is_null($input))
+				throw new BadJSONException(null);
+			
+			return $input;
 		}
 	}
 ?>

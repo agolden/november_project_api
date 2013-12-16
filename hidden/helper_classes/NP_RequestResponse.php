@@ -1,7 +1,7 @@
 <?php
-	require_once('NP_JSONObject.php');
+	//require_once('NP_JSONObject.php');
 	
-	class NP_JSONResponse{
+	class NP_RequestResponse{
     	
     	public $errorCode = 0;
     	public $errorMessage = '';
@@ -14,7 +14,7 @@
             $response['errorCode'] = $this->errorCode;
             $response['errorMessage'] = $this->errorMessage;
 
-            return json_encode($response);
+            return $response;
     	}
 	}
 ?>
