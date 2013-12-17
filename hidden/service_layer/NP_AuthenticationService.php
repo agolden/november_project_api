@@ -10,7 +10,7 @@
 			$user = $this->validateAppToken($app_token);
 		}
 
-		//returns the user record true if successful, false if not.
+		//Get the user record by app token
 		function validateAppToken($app_token)
 		{
 			$userService = new UserService($this->DBH);
@@ -39,7 +39,7 @@
 			return $user;
 		}
 
-		//returns the Facebook profile if successful, false if not
+		//Get the Facebook profile by Facebook token
 		function validateFacebookToken($facebook_token)
 		{
 			throw new AuthenticationFailedException("The token provided is invalid.  Please re-authenticate.");
@@ -49,18 +49,17 @@
 		{
 			$userService = new UserService($this->DBH);
 			$profile = new FacebookProfile($this->validateFacebookToken($facebook_token));
-			
+			$user = new NP_UserModel;
+
 			try
 				$user = $userService->getUserByFacebookId($profile->getFacebookId());
-				$user['email'] = $profile->getNewToken();
-				$user['token'] = getNewToken();
-				$user['token_expiry'] = Date('Y-m-d H:i:s', strtotime("+10 days"));
-				$userService->updateUser($user);
-			catch (RecordNotFoundException $e)
-				$userService->createUser($email);
-				
-			//Insert a new record if the user doesn't exist
-			//Update the record with a new token if the user does exist
+			catch (RecordNotFoundException $e) {}
+
+			$user['email'] = $profile->getEmail();
+			$user['token'] = getNewToken();
+			$user['token_expiry'] = Date('Y-m-d H:i:s', strtotime("+10 days"));
+
+			$userService->upsertUser($user);
 		}
 	}
 ?>

@@ -5,11 +5,11 @@
 	
 	class UserService extends NP_service{
     	
-		function getUserByToken($token)
+		function getUserByAppToken($app_token)
 		{
 			$response = array();
-			$stmt = $this->DBH->prepare('SELECT * FROM user where token = :token');
-			$stmt->execute(array(':token' => $token));
+			$stmt = $this->DBH->prepare('SELECT * FROM user where app_token = :app_token');
+			$stmt->execute(array(':app_token' => $app_token));
 			
 			foreach($stmt->fetchAll() as $record) {
 				$jsonObject = new UserModel;
@@ -25,6 +25,18 @@
 				throw new RecordNotFoundException("The user you requested was not found.");
 			
 			return $response;
+		}
+
+		function upsertUser($user)
+		{
+			if (empty($user->id))
+			{
+				//Create a new record
+			}
+			else
+			{
+				//Update the existing user
+			}
 		}
 	}
 ?>
