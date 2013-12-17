@@ -3,14 +3,15 @@
 	
 	class WorkoutLocationModel extends NP_Model{
     	
-    	public $id = 0;
-		public $tribe_id = 0;
-    	public $name = '';
-        public $latitude = 0.0;
-        public $longitude = 0.0;
-   
-    	function getArray() {
-    		return array('id'=> $this->id, 'tribe_id'=> $this->tribe_id, 'name'=> $this->name, 'latitude' => $this->latitude, 'longitude' => $this->longitude);
+    	public $id;
+		public $tribe_id;
+    	public $name;
+        public $latitude;
+        public $longitude;
+        
+    	public static function getTableName()
+    	{
+    		return "workout_location";
     	}
 		
 		public static function getCreateRequiredAttributes()

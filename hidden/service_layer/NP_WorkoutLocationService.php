@@ -74,25 +74,10 @@
 			
 			return $response;
 		}
-		
-		function upsertWorkoutLocation($workout_location)
+
+		function upsert($workout_location)
 		{
-			try
-			{
-				$response = array();
-				$stmt = $this->DBH->prepare('INSERT INTO workout_location(tribe_id, name, latitude, longitude) VALUES (:tribe_id, :name, :latitude, :longitude)');
-				$stmt->execute(array(':tribe_id' => $tribe_id, ':name' => $name, ':latitude' => $latitude, ':longitude' => $longitude));
-				
-				$jsonObject = new WorkoutLocationModel;
-				$jsonObject->id = $this->DBH->lastInsertId();
-				$jsonObject->tribe_id = $tribe_id;
-				$jsonObject->name = $name;
-				$jsonObject->latitude = $latitude;
-				$jsonObject->longitude = $longitude;
-				$response[] = $jsonObject->getArray();
-				return $response;
-			}
-			catch (PDOException $e) { $this->handlePDOError($e); }
+			return $this->doSimpleUpsert($workout_location);
 		}
 	}
 ?>

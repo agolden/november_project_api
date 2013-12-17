@@ -1,9 +1,7 @@
 <?php
 	abstract class NP_Model
 	{
-    	abstract function getArray();
-		
-		public static function hasRequiredAttributes($compareArray)
+    	public static function hasRequiredAttributes($compareArray)
 		{	
 			$reqs = static::getCreateRequiredAttributes();
 			if (count(array_intersect_key(array_flip($reqs), $compareArray)) === count($reqs))
@@ -11,6 +9,20 @@
 
 			return FALSE;	
 		}
+
+		function getArray() {
+
+			$valuesArray = array();
+			$refObj = new ReflectionObject($this);
+			foreach ($refObj->getProperties() as $prop) {
+				$propName = $prop->getName();
+				$propValue = $this->$propName;
+				if(!empty($propValue))
+					$valuesArray[$propName] = $propValue;
+			}
+
+			return $valuesArray;
+    	}
 		
 		abstract static function getCreateRequiredAttributes();
 	}

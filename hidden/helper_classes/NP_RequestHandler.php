@@ -5,14 +5,13 @@
 	
 	abstract class RequestHandler
 	{
-		protected $mysqli;
 		protected $response;
 		protected $DBH;
+
+		function handleGet() { throw new MethodNotAllowed(null); }
+		function handlePost() { throw new MethodNotAllowed(null); }
+		function handlePut() { throw new MethodNotAllowed(null); }
 	
-		function handleGet() { throw new BadRequestException('Method not supported for this endpoint.'); }
-		function handlePost() { throw new BadRequestException('Method not supported for this endpoint.'); }
-		function handlePut() { throw new BadRequestException('Method not supported for this endpoint.'); }
-		
 		function handleRequest()
 		{
 			header('Content-type: application/json');
@@ -49,6 +48,47 @@
 			
 			echo json_encode($this->response->getResponse());
 		}
+
+		function handleSimplePut()
+		{
+			$prefix = str_replace('Handler', '', get_class($this));
+
+			//Get the JSON from the request
+			$request = RequestHandler::getValidJSON();
+			
+			//Check for required parameters
+			if(empty($_GET['id']))
+				throw new RequiredParameterMissingException(null);
+
+			//Add the id to the request
+			$request['id']  = $_GET['id'];
+			
+			//Create an object from the request
+			$object = RequestHandler::createObjectFromRequest($request, $prefix . 'Model');
+
+			//Execute the update
+			$refClass = new ReflectionClass($prefix . 'Service');
+			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object);
+		}
+
+		function handleSimplePost()
+		{
+			$prefix = str_replace('Handler', '', get_class($this));
+
+			//Get the JSON from the request
+			$request = RequestHandler::getValidJSON();
+
+			//Create an object from the request
+			$object = RequestHandler::createObjectFromRequest($request, $prefix . 'Model');
+			
+			if (!$object->hasRequiredAttributes($request))
+				throw new RequiredParameterMissingException(null);
+
+
+			//Execute the create
+			$refClass = new ReflectionClass($prefix . 'Service');
+			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object);
+		}
 		
 		public static function getValidJSON()
 		{
@@ -59,6 +99,19 @@
 				throw new BadJSONException(null);
 			
 			return $input;
+		}
+
+		public static function createObjectFromRequest($request, $object_name)
+		{
+			$refClass = new ReflectionClass($object_name);
+			$object = $refClass->newInstance();
+			foreach ($request as $key => $value) {
+    			if(!$refClass->hasProperty($key))
+    				throw new InvalidParameterException(null);
+				$object->$key = $value;
+			}
+
+			return $object;
 		}
 	}
 ?>
