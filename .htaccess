@@ -1,6 +1,11 @@
 Options -Indexes
+Options -MultiViews
 
+Header set Access-Control-Allow-Origin "*"
+
+<IfModule mod_rewrite.c>
 RewriteEngine  On
+RewriteBase /november_project_api/
 RewriteRule ^workout_locations(/)?(\d*)$ endpoint/NP_WorkoutLocationHandler.php?id=$2 [L,QSA]
 RewriteRule ^workout_routines(/)?(\d*)$ endpoint/NP_WorkoutRoutineHandler.php?id=$2 [L,QSA]
 RewriteRule ^workouts(/)([A-z]+)$ endpoint/NP_WorkoutHandler.php?request_type=$2 [L,QSA]
@@ -13,3 +18,4 @@ RewriteRule ^api-doc/access_token$ swagger-json/access_token.php
 RewriteRule ^api-doc/workout_locations$ swagger-json/workout_location.php
 RewriteRule ^api-doc/workout_routines$ swagger-json/workout_routine.php
 RewriteRule ^api-doc/workouts$ swagger-json/workout.php
+</IfModule>

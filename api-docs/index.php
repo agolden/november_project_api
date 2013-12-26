@@ -19,7 +19,13 @@
   <script type="text/javascript">
     $(function () {
       window.swaggerUi = new SwaggerUi({
-      url: "http://localhost/november_project_api/api-doc",
+      <?php
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        $rootDirectory = $_SERVER['REQUEST_URI'];
+        $rootDirectory = substr($rootDirectory, 0, strrpos($rootDirectory, '/'));
+        $rootDirectory = substr($rootDirectory, 0, strrpos($rootDirectory, '/'));
+      ?>
+      url: "<?="$protocol$_SERVER[HTTP_HOST]$rootDirectory"?>/api-doc",
       dom_id: "swagger-ui-container",
       supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
       onComplete: function(swaggerApi, swaggerUi){
