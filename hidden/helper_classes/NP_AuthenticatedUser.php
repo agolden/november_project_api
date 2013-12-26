@@ -1,6 +1,7 @@
 <?php
 	require_once('../hidden/helper_classes/NP_exceptions.php');
 	require_once('../hidden/service_layer/NP_UserService.php');
+	require_once('../hidden/service_layer/NP_AuthenticationService.php');
 	require_once('../hidden/data_model/NP_UserModel.php');
 	
 	final class AuthenticatedUser {

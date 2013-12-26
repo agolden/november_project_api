@@ -40,7 +40,7 @@
 				}
 
 			} catch (NPException $e) {
-				header('error', true, $e->getHTTPCode());
+				http_response_code($e->getHTTPCode());
 				$this->response->errorCode = $e->getErrorCode();
 				$this->response->errorMessage = $e->getMessage();
 
