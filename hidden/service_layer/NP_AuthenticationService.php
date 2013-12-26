@@ -1,65 +1,97 @@
 <?php
 	require_once('../hidden/helper_classes/NP_Service.php');
 	require_once('../hidden/helper_classes/NP_exceptions.php');
+	require_once('../hidden/helper_classes/NP_Token.php');
+	require_once('../hidden/data_model/NP_UserModel.php');
 	require_once('../hidden/service_layer/NP_UserService.php');
-	
-	class AuthenticateService extends NP_service{
-    	
-		function authorizeAction($app_token, $entity, $action)
-		{
-			$user = $this->validateAppToken($app_token);
-		}
 
-		//Get the user record by app token
-		function validateAppToken($app_token)
+
+	class AuthenticationService extends NP_service{
+
+		function authenticateByFacebookToken($short_lived_facebook_token)
 		{
+
+			$facebook_token = AuthenticationService::getLongLivedFacebookToken($short_lived_facebook_token);
+
+			//Confirm that the token is valid.
+			$profile = $this->getFacebookProfile($facebook_token);
+
+			//Now get user by the Facebook id to see if the user already exists in the system
 			$userService = new UserService($this->DBH);
-			$user;
+			$response = $userService->getUserByFacebookId($profile['id']);
 
-			try 
-				$user = $userService->getUserByToken($token);
-			catch (RecordNotFoundException $e)
-				throw new AuthenticationFailedException("The token provided is invalid.  Please re-authenticate.");
 
-			//If the token has expired, check the facebook token to see if it, too, has expired
-			if($user['token_expiration'] < now) {
+			$user = new UserModel;
+			$token;
+			
+			//If the user does not yet exist, this is the first login.  Create the user.
+			if(empty($response)) {
+				$token = new Token;
+				$user->email = $profile['email'];
+				$user->facebook_id = $profile['id'];
+				$user->facebook_token = $facebook_token;
 				
-				$email;
-				if(!empty($user['facebook_token']))
-					$email = validateFacebookToken($user['facebook_token']);
+				$user->token = $token->token;
+				$user->token_expiry = $token->token_expiry;	
+
+				$record = $userService->doSimpleCreate($user);			
+			}
+			//Otherwise, check to see if the facebook token has changed.
+			else {
+				//If the facebook token has changed or the current token is invalid, generate a new token
+				if($facebook_token != $response->facebook_token || date($response->token_expiry) < date("Y-m-d H:i:s"))
+				{
+					$token = new Token;
+					$user->id = $response->id;
+					$user->token = $token->token;
+					$user->token_expiry = $token->token_expiry;	
+					$record = $userService->doSimpleUpdate($user);
+				}
+
+				//Otherwise, extend the current token
 				else
-					throw new AuthenticationFailedException("The token provided is invalid.  Please re-authenticate."
-				
-				$user['email'] = $email;
-				$user['token_expiry'] = Date('Y-m-d H:i:s', strtotime("+10 days"));
-
-				$userService->updateUser($user);
+				{
+					$token = new Token($response->token);
+					$user->id = $response->id;
+					$user->token_expiry = $token->token_expiry;	
+					$record = $userService->doSimpleUpdate($user);
+				}
 			}
 
-			return $user;
+			return $token;
 		}
 
-		//Get the Facebook profile by Facebook token
-		function validateFacebookToken($facebook_token)
+		public static function getLongLivedFacebookToken($short_lived_facebook_token)
 		{
-			throw new AuthenticationFailedException("The token provided is invalid.  Please re-authenticate.");
+			$facebook = parse_ini_file('../hidden/git_ignore/facebook.ini');
+			$graph_url = "https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=" . $facebook['app_id'] . "&client_secret=" . $facebook['app_secret'] . "&fb_exchange_token=" . $short_lived_facebook_token;
+			
+			$curl = curl_init($graph_url);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			$response = curl_exec($curl);
+			parse_str($response, $output);
+
+			if (!array_key_exists('access_token', $output))
+				throw new AuthenticationFailedException("The Facebook token provided could not be validated.");
+			
+			return $output['access_token'];
 		}
 
-		function authorizeUserByFacebookToken($facebook_token)
+		public static function getFacebookProfile($facebook_token)
 		{
-			$userService = new UserService($this->DBH);
-			$profile = new FacebookProfile($this->validateFacebookToken($facebook_token));
-			$user = new NP_UserModel;
+			$graph_url = "https://graph.facebook.com/me?access_token=" . $facebook_token;
+			$curl = curl_init($graph_url);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			$response = curl_exec($curl);
+			$response = json_decode( $response, TRUE );
 
-			try
-				$user = $userService->getUserByFacebookId($profile->getFacebookId());
-			catch (RecordNotFoundException $e) {}
+			if (array_key_exists('error', $response) && !empty($response['error']))
+				throw new AuthenticationFailedException("The Facebook token provided could not be validated.");				
 
-			$user['email'] = $profile->getEmail();
-			$user['token'] = getNewToken();
-			$user['token_expiry'] = Date('Y-m-d H:i:s', strtotime("+10 days"));
+			if (!array_key_exists('email', $response))
+				throw new AuthenticationFailedException("The identity of the Facebook user could not be validated.");
 
-			$userService->upsertUser($user);
+			return $response;
 		}
 	}
 ?>

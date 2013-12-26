@@ -3,21 +3,33 @@
 	
 	class UserModel extends NP_Model{
     	
-    	public $id = 0;
-		public $email = '';
-		public $facebook_token = '';
+    	public $id;
+		public $email;
+        public $facebook_token;
+        public $facebook_id;
         public $is_admin = FALSE;
-        public $token = '';
-        public $token_expiry = new DateTime;
+        public $token;
+        public $token_expiry;
         
    
-    	function getArray() {
-    		return array('id'=> $this->id, 'email'=> $this->email, 'facebook_token' => $this->facebook_token, 'is_admin' => $this->is_admin, 'token' => $this->token, 'token_expiry' => $this->token_expiry);
+    	public static function getTableName()
+    	{
+    		return "user";
     	}
-		
-		public static function getCreateRequiredAttributes()
+
+    	public static function getCreateRequiredAttributes()
 		{
 			return array('email', 'token', 'token_expiry');
 		}
+
+        public function isUserAdmin()
+        {
+            return $this->is_admin;
+        }
+
+        public function isUserTribeLeader($tribe_id)
+        {
+            return $this->is_admin;
+        }
 	}
 ?>

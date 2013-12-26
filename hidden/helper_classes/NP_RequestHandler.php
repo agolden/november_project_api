@@ -1,6 +1,7 @@
 <?php
 	require_once('NP_RequestResponse.php');
 	require_once('NP_exceptions.php');
+	require_once('NP_SupportingMethods.php');
 	require_once('NP_DatabaseConnection.php');
 	
 	abstract class RequestHandler
@@ -11,7 +12,7 @@
 		function handleGet() { throw new MethodNotAllowed(null); }
 		function handlePost() { throw new MethodNotAllowed(null); }
 		function handlePut() { throw new MethodNotAllowed(null); }
-	
+
 		function handleRequest()
 		{
 			header('Content-type: application/json');
@@ -20,16 +21,19 @@
 			try{
 				$this->DBH = (new DatabaseConnection)->getConn();
 				
+				//Get the token off the request, if it exists
+				$token = $this->getToken();
+
 				$method = $_SERVER['REQUEST_METHOD'];
 				switch ($method) {
 					case 'GET':
-						$this->handleGet();
+						$this->handleGet($token);
 						break;
 					case 'POST':
-						$this->handlePost();
+						$this->handlePost($token);
 						break;
 					case 'PUT':
-						$this->handlePut();
+						$this->handlePut($token);
 						break;
 					default:
 						break;
@@ -43,18 +47,19 @@
 			} catch (Exception $e){
 				header('error', true, 500);
 				$this->response->errorCode = 1999;
-				$this->response->errorMessage = "Server exception occurred.  Please try again later.";
+				$this->response->errorMessage = "Server exception occurred.  Please try again later." . $e->getTraceAsString();
 			}
 			
 			echo json_encode($this->response->getResponse());
 		}
 
-		function handleSimplePut()
+		function handleSimplePut($token = null)
 		{
+			$authenticated_user = new AuthenticatedUser($token, $this->DBH);
 			$prefix = str_replace('Handler', '', get_class($this));
 
 			//Get the JSON from the request
-			$request = RequestHandler::getValidJSON();
+			$request = SupportingMethods::getValidJSON();
 			
 			//Check for required parameters
 			if(empty($_GET['id']))
@@ -64,22 +69,23 @@
 			$request['id']  = $_GET['id'];
 			
 			//Create an object from the request
-			$object = RequestHandler::createObjectFromRequest($request, $prefix . 'Model');
+			$object = SupportingMethods::createObjectFromRequest($request, $prefix . 'Model');
 
 			//Execute the update
 			$refClass = new ReflectionClass($prefix . 'Service');
-			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object);
+			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object, $authenticated_user);
 		}
 
-		function handleSimplePost()
+		function handleSimplePost($token = null)
 		{
+			$authenticated_user = new AuthenticatedUser($token, $this->DBH);
 			$prefix = str_replace('Handler', '', get_class($this));
 
 			//Get the JSON from the request
-			$request = RequestHandler::getValidJSON();
+			$request = SupportingMethods::getValidJSON();
 
 			//Create an object from the request
-			$object = RequestHandler::createObjectFromRequest($request, $prefix . 'Model');
+			$object = SupportingMethods::createObjectFromRequest($request, $prefix . 'Model');
 			
 			if (!$object->hasRequiredAttributes($request))
 				throw new RequiredParameterMissingException(null);
@@ -87,31 +93,38 @@
 
 			//Execute the create
 			$refClass = new ReflectionClass($prefix . 'Service');
-			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object);
+			$this->response->records = $refClass->newInstance($this->DBH)->upsert($object, $authenticated_user);
 		}
-		
-		public static function getValidJSON()
-		{
-			$inputJSON = file_get_contents('php://input');
-			$input = json_decode( $inputJSON, TRUE );
 
-			if ($_SERVER['CONTENT_TYPE'] != "application/json" || is_null($input))
-				throw new BadJSONException(null);
+		function handleSimpleGet($token = null)
+		{
+			$prefix = str_replace('Handler', '', get_class($this));
+
+			//Create an object from the GET
+			$object = SupportingMethods::createObjectFromRequest($_GET, $prefix . 'Model');
+
+			//Execute the select
+			$refClass = new ReflectionClass($prefix . 'Service');
 			
-			return $input;
+			$this->response->records = $refClass->newInstance($this->DBH)->getRecords($object, null);
 		}
 
-		public static function createObjectFromRequest($request, $object_name)
+		private function getToken()
 		{
-			$refClass = new ReflectionClass($object_name);
-			$object = $refClass->newInstance();
-			foreach ($request as $key => $value) {
-    			if(!$refClass->hasProperty($key))
-    				throw new InvalidParameterException(null);
-				$object->$key = $value;
-			}
+			$token;
+			if (array_key_exists('HTTP_AUTHORIZATION', $_SERVER))
+				$token = $_SERVER['HTTP_AUTHORIZATION'];
+			elseif(array_key_exists('REDIRECT_HTTP_AUTHORIZATION', $_SERVER))
+				$token = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+			else
+				return null;
+			
+			$count;
+			$token = preg_replace("/Bearer (.*)/", "$1", $token, 1, $count);
+			if ($count < 1)
+				return null;
 
-			return $object;
+			return $token;
 		}
 	}
 ?>

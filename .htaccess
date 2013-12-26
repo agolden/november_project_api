@@ -2,4 +2,14 @@ Options -Indexes
 
 RewriteEngine  On
 RewriteRule ^workout_locations(/)?(\d*)$ endpoint/NP_WorkoutLocationHandler.php?id=$2 [L,QSA]
+RewriteRule ^workout_routines(/)?(\d*)$ endpoint/NP_WorkoutRoutineHandler.php?id=$2 [L,QSA]
+RewriteRule ^workouts(/)([A-z]+)$ endpoint/NP_WorkoutHandler.php?request_type=$2 [L,QSA]
+RewriteRule ^workouts(/)?(\d*)$ endpoint/NP_WorkoutHandler.php?id=$2 [L,QSA]
+RewriteRule ^access_token(/)?(.*)$ endpoint/NP_AuthenticationHandler.php?type=$2 [L,QSA]
 RewriteRule ^tribes/(\d*)/workout_locations endpoint/NP_WorkoutLocationHandler.php?tribe_id=$1 [L,QSA]
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteRule ^api-doc$ swagger-json/index.php
+RewriteRule ^api-doc/access_token$ swagger-json/access_token.php
+RewriteRule ^api-doc/workout_locations$ swagger-json/workout_location.php
+RewriteRule ^api-doc/workout_routines$ swagger-json/workout_routine.php
+RewriteRule ^api-doc/workouts$ swagger-json/workout.php

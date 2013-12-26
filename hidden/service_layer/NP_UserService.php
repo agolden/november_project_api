@@ -4,8 +4,66 @@
 	require_once('../hidden/data_model/NP_UserModel.php');
 	
 	class UserService extends NP_service{
-    	
-		function getUserByAppToken($app_token)
+
+		function __construct($dbh) {
+			$this->DBH = $dbh;
+			$this->uniqueErrorMessage = 'The user email must be unique.';
+			//$this->invalidReferenceMessage = 'The tribe id you referenced was not found.';
+		}
+
+		function authorizeSelect($token, $input) {  }
+		function authorizeInsert($input, $authenticated_user) { }
+		function authorizeUpdate($input, $authenticated_user) { }
+
+		function getUserByToken($token)
+		{
+			$object = new UserModel;
+			$object->token = $token;
+			$result = $this->doSimpleGet($object);
+			return count($result) > 0 ? $result[0] : null;
+		}
+
+		function getUserByFacebookId($facebook_id)
+		{
+			$object = new UserModel;
+			$object->facebook_id = $facebook_id;
+			$result = $this->doSimpleGet($object);
+			return count($result) > 0 ? $result[0] : null;
+		}
+
+		/*function authenticateUser($token)
+		{
+			$object = new UserModel;
+			$object->token = $token;
+
+			$response = $this->doSimpleGet($object);
+
+			if (count($response) != 1)
+				throw new AuthenticationFailedException(null);
+
+			$this->authenticatedUser = $response[0];
+		}*/
+		/*function isLoggedInUserAdmin()
+		{
+			if (!$user)
+				throw new InvalidServiceCall();
+			return $this->user['isAdmin'];
+		}*/
+
+
+
+
+		/*private function getRecords($object = null, $token = null)
+		{
+			if(empty($object))
+				$object = new WorkoutLocationModel;
+
+			return $this->doSimpleGet($object);
+		}*/
+
+		//function isAdmin()
+
+		/*function getUserByAppToken($app_token)
 		{
 			$response = array();
 			$stmt = $this->DBH->prepare('SELECT * FROM user where app_token = :app_token');
@@ -37,6 +95,6 @@
 			{
 				//Update the existing user
 			}
-		}
+		}*/
 	}
 ?>

@@ -17,13 +17,13 @@
 			foreach ($refObj->getProperties() as $prop) {
 				$propName = $prop->getName();
 				$propValue = $this->$propName;
-				if(!empty($propValue))
+				if(!is_null($propValue))
 					$valuesArray[$propName] = $propValue;
 			}
 
 			return $valuesArray;
     	}
-		
+		abstract static function getTableName();
 		abstract static function getCreateRequiredAttributes();
 	}
 ?>
